@@ -1,0 +1,46 @@
+# WARNING: This configuration is for LOCAL DEVELOPMENT ONLY
+# DO NOT use in production environments
+# Services are configured with minimal security for development convenience
+# For production use, see docker-compose.prod.yml
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_rails
+    ports:
+      - "${MYSQL_HOST:-127.0.0.1}:${MYSQL_PORT:-33308}:3306"
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: always
+    command: --sql_mode="NO_ENGINE_SUBSTITUTION" --log_error_verbosity=2
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis_rails
+    ports:
+      - "${REDIS_HOST:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  elasticsearch:
+    image: blacktop/elasticsearch:7.16
+    container_name: elasticsearch_rails
+    ports:
+      - "${ELASTICSEARCH_HOST:-127.0.0.1}:${ELASTICSEARCH_PORT:-9200}:9200"
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - action.destructive_requires_name=false
+      - logger.deprecation.level=error
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: always
+
+volumes:
+  mysql_data:
+  redis_data:
+  elasticsearch_data:
