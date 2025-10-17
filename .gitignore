@@ -4,6 +4,8 @@
 .env.local
 .env.production
 .env.staging
+.env.disabled
+.env.disabled.*
 
 # OS generated files
 .DS_Store

@@ -1,10 +1,10 @@
-# Docker Compose Setup for Rails Dependencies
+# Docker Compose Setup for Development Dependencies
 
 > ⚠️ **SECURITY WARNING**: This configuration is for **LOCAL DEVELOPMENT ONLY**.
 > Services are configured with minimal security (no passwords, disabled authentication)
 > for development convenience. **DO NOT use in production environments.**
 
-This repository contains a Docker Compose configuration for running MySQL, Redis, and Elasticsearch services that can be used by Rails applications running on the host macOS system.
+This repository contains a Docker Compose configuration for running services that can be used by applications running on the host system.
 
 ## Services
 
@@ -35,25 +35,96 @@ This repository contains a Docker Compose configuration for running MySQL, Redis
 
 ## Quick Start
 
-### Option 1: Automated Setup (Recommended)
+### Automated Setup
 ```bash
-# Run the setup script
+# Run the setup script - it handles everything automatically
 ./bin/setup
 ```
 
-### Option 2: Manual Setup
+The setup script will:
+- ✅ **Detect configuration conflicts** and help you choose the right approach
+- ✅ **Create .env file** from template if needed
+- ✅ **Start all services** with proper configuration
+- ✅ **Show connection details** for your applications
+
+### Configuration Options
+
+This setup supports two **mutually exclusive** ways to configure service ports and hosts:
+
+> ⚠️ **IMPORTANT**: Choose **ONE** approach only. Mixing both can cause confusion and unexpected behavior.
+
+#### Option 1: .env File
+**Best for**: Project-specific configuration, team consistency, persistent settings
+
 ```bash
-# 1. Copy the environment template
+# The setup script creates this automatically, or you can:
 cp env.example .env
 
-# 2. Start services
-docker-compose up -d
+# Edit .env file to customize ports
+MYSQL_PORT=33308
+REDIS_PORT=6379
+ELASTICSEARCH_PORT=9200
 ```
+
+**Benefits**:
+- ✅ **Project-specific**: Variables tied to the project, not your shell
+- ✅ **Persistent**: Survives shell restarts and new terminal sessions
+- ✅ **Team-friendly**: Other developers can use the same configuration
+- ✅ **Clean workflow**: Just run `docker-compose up -d`
+
+#### Option 2: Shell Environment Variables
+**Best for**: Application config sync, multi-project workflows, CI/CD automation
+
+```bash
+# Set in your shell (e.g., .zshrc, .bashrc)
+export MYSQL_HOST=127.0.0.1
+export MYSQL_PORT=33308
+export REDIS_HOST=127.0.0.1
+export REDIS_PORT=6379
+export ELASTICSEARCH_HOST=127.0.0.1
+export ELASTICSEARCH_PORT=9200
+
+# Then run setup
+./bin/setup
+```
+
+**Benefits**:
+- ✅ **App config sync**: Framework configs can directly read these variables
+- ✅ **Multi-project**: Different projects can use different ports
+- ✅ **CI/CD ready**: Perfect for automated environments
+- ✅ **No file management**: No `.env` files to track
+
+#### How It Works
+Docker Compose uses `${VAR:-default}` syntax, which means:
+- **Shell variables take precedence** over `.env` file
+- **`.env` file provides defaults** when shell vars not set
+- **Choose one approach** to avoid configuration conflicts
+
+#### Example: Framework Configuration Sync
+When using shell variables, your application configuration files can directly reference them:
+
+```yaml
+# database.yml
+default: &default
+  adapter: mysql2
+  host: <%= ENV['MYSQL_HOST'] || 'localhost' %>
+  port: <%= ENV['MYSQL_PORT'] || 3306 %>
+  username: root
+  password: ""
+```
+
+**Result**: Change ports in one place (shell), everything updates automatically! 🎯
 
 ### Stop Services
 ```bash
+# Stop and remove containers (preserves data)
+./bin/teardown
+
+# Or use docker-compose directly
 docker-compose down
 ```
+
+## Management Commands
 
 ### View Logs
 ```bash
@@ -71,25 +142,29 @@ docker-compose logs -f elasticsearch
 docker-compose ps
 ```
 
-## Connection Details for Rails Applications
+### Run Tests
+```bash
+# Run comprehensive tests
+./bin/test
+```
+
+## Connection Details for Applications
 
 ### MySQL
 ```yaml
-# database.yml
-production:
-  adapter: mysql2
-  host: 127.0.0.1
-  port: 33308
-  username: root
-  password: ""
-  database: your_app_production
+# Example configuration (adjust for your framework)
+host: 127.0.0.1
+port: 33308
+username: root
+password: ""
+database: your_app_production
 ```
 
-**Connection String**: `mysql2://root@127.0.0.1:33308/your_database`
+**Connection String**: `mysql://root@127.0.0.1:33308/your_database`
 
 ### Redis
 ```yaml
-# redis.yml or environment variables
+# Example configuration (adjust for your framework)
 REDIS_URL: redis://127.0.0.1:6379
 ```
 
@@ -97,10 +172,9 @@ REDIS_URL: redis://127.0.0.1:6379
 
 ### Elasticsearch
 ```yaml
-# elasticsearch.yml
-production:
-  host: '127.0.0.1:9200'
-  log: true
+# Example configuration (adjust for your framework)
+host: '127.0.0.1:9200'
+log: true
 ```
 
 **URL**: `http://127.0.0.1:9200`
@@ -113,8 +187,6 @@ All services use named Docker volumes for data persistence:
 - `elasticsearch_data` - Elasticsearch indices and data
 
 Data will persist across container restarts and system reboots.
-
-## Management Commands
 
 ### Restart Services
 ```bash
@@ -155,21 +227,36 @@ docker-compose exec redis redis-cli
 docker-compose exec elasticsearch curl http://localhost:9200
 ```
 
-## Health Checks
+## Testing
 
-### MySQL
+### Automated Testing
+Run the comprehensive test suite to validate all services and configurations:
+
+```bash
+./bin/test
+```
+
+The test script validates:
+- ✅ **Connectivity**: All services respond correctly
+- ✅ **Security**: Ports are bound to localhost only
+- ✅ **Configuration**: .env file is properly configured
+- ✅ **Service Health**: All containers are running
+
+### Manual Health Checks
+
+#### MySQL
 ```bash
 # Test connection
 mysql -h 127.0.0.1 -P 33308 -u root -e "SELECT 1;"
 ```
 
-### Redis
+#### Redis
 ```bash
 # Test connection
 redis-cli -h 127.0.0.1 -p 6379 ping
 ```
 
-### Elasticsearch
+#### Elasticsearch
 ```bash
 # Test connection
 curl http://127.0.0.1:9200
@@ -237,6 +324,8 @@ ELASTICSEARCH_HOST=0.0.0.0
 #### Scripts
 The `bin/` directory contains helpful scripts:
 - **`bin/setup`**: Automated setup script that creates `.env` file and starts services
+- **`bin/test`**: Comprehensive test script that validates all services and configurations
+- **`bin/teardown`**: Stops and removes containers while preserving data volumes
 
 ## Auto-Start on Boot
 
@@ -278,7 +367,9 @@ docker-compose logs -f --tail=50
 ```
 dockers/
 ├── bin/
-│   └── setup            # Automated setup script
+│   ├── setup            # Automated setup script
+│   ├── test             # Comprehensive test script
+│   └── teardown         # Container teardown script
 ├── docker-compose.yml    # Main configuration file
 ├── env.example          # Environment variables template
 ├── .gitignore          # Git ignore file

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Docker Compose Teardown Script for Development Dependencies
+# This script stops and removes containers but preserves data volumes
+
+echo "🧹 Tearing down Docker Compose for Development Dependencies..."
+
+# Stop and remove containers (but keep volumes)
+echo "🛑 Stopping and removing containers..."
+docker-compose down
+
+# Check if containers were removed
+echo "🔍 Checking if containers were removed..."
+if docker ps -a --format "{{.Names}}" | grep -E "^(mysql|redis|elasticsearch)$" >/dev/null 2>&1; then
+    echo -e "\033[0;31m❌ Some containers still exist\033[0m"
+    docker ps -a --format "table {{.Names}}\t{{.Status}}" | grep -E "^(mysql|redis|elasticsearch)"
+    exit 1
+else
+    echo -e "\033[0;32m✅ All containers removed successfully\033[0m"
+fi
+
+# Show volume status
+echo ""
+echo "📦 Data volumes preserved:"
+docker volume ls --format "table {{.Name}}\t{{.Driver}}" | grep -E "(mysql_data|redis_data|elasticsearch_data)" || echo "No volumes found"
+
+echo ""
+echo "🎉 Teardown complete! Your data has been preserved."
+echo ""
+echo "To start services again: ./bin/setup"
+echo "To completely remove data: docker-compose down -v"

@@ -6,7 +6,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql_rails
+    container_name: mysql
     ports:
       - "${MYSQL_HOST:-127.0.0.1}:${MYSQL_PORT:-33308}:3306"
     environment:
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:6.2-alpine
-    container_name: redis_rails
+    container_name: redis
     ports:
       - "${REDIS_HOST:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     volumes:
@@ -27,7 +27,7 @@ services:
 
   elasticsearch:
     image: blacktop/elasticsearch:7.16
-    container_name: elasticsearch_rails
+    container_name: elasticsearch
     ports:
       - "${ELASTICSEARCH_HOST:-127.0.0.1}:${ELASTICSEARCH_PORT:-9200}:9200"
     environment:

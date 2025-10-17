@@ -1,17 +1,77 @@
 #!/bin/bash
 
-# Docker Compose Setup Script for Rails Dependencies
+# Docker Compose Setup Script for Development Dependencies
 # This script sets up the environment and starts the services
 
-echo "🚀 Setting up Docker Compose for Rails Dependencies..."
+echo "🚀 Setting up Docker Compose for Development Dependencies..."
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo "📋 Creating .env file from template..."
-    cp env.example .env
-    echo "✅ .env file created successfully"
-else
+# Check for existing configuration
+HAS_ENV_FILE=false
+HAS_SHELL_VARS=false
+
+if [ -f .env ]; then
+    HAS_ENV_FILE=true
+fi
+
+# Check if any environment variables are set
+if [ -n "${MYSQL_PORT:-}" ] || [ -n "${REDIS_PORT:-}" ] || [ -n "${ELASTICSEARCH_PORT:-}" ]; then
+    HAS_SHELL_VARS=true
+fi
+
+# Configuration conflict detection
+if [ "$HAS_ENV_FILE" = true ] && [ "$HAS_SHELL_VARS" = true ]; then
+    echo ""
+    echo "⚠️  CONFIGURATION CONFLICT DETECTED!"
+    echo "   You have both .env file AND shell environment variables set."
+    echo "   This can cause unexpected behavior."
+    echo ""
+    echo "Choose ONE approach:"
+    echo "   1) Use .env file (disable shell variables)"
+    echo "   2) Use shell variables (disable .env file)"
+    echo ""
+    read -p "Which approach do you want to use? (1 or 2): " choice
+
+    case $choice in
+        1)
+            echo "📋 Using .env file approach..."
+            unset MYSQL_HOST MYSQL_PORT REDIS_HOST REDIS_PORT ELASTICSEARCH_HOST ELASTICSEARCH_PORT
+            if [ -f .env.disabled ]; then
+                echo "   Re-enabling .env file..."
+                mv .env.disabled .env
+            fi
+            ;;
+        2)
+            echo "🐚 Using shell variables approach..."
+            if [ -f .env ]; then
+                echo "   Disabling .env file (renaming to .env.disabled)..."
+                mv .env .env.disabled
+            fi
+            ;;
+        *)
+            echo "❌ Invalid choice. Exiting."
+            exit 1
+            ;;
+    esac
+fi
+
+# Set up .env file if needed and no shell variables are set
+if [ ! -f .env ] && [ "$HAS_SHELL_VARS" = false ]; then
+    if [ -f .env.disabled ]; then
+        echo "📋 Re-enabling .env file..."
+        mv .env.disabled .env
+        echo "✅ .env file re-enabled successfully"
+    else
+        echo "📋 Creating .env file from template..."
+        cp env.example .env
+        echo "✅ .env file created successfully"
+    fi
+    echo ""
+    echo "💡 You can customize ports by editing the .env file"
+    echo "   Or set shell variables instead (see README.md for details)"
+elif [ -f .env ]; then
     echo "✅ .env file already exists"
+elif [ "$HAS_SHELL_VARS" = true ]; then
+    echo "✅ Using shell environment variables"
 fi
 
 # Start the services
@@ -23,10 +83,10 @@ echo "🔍 Checking service status..."
 docker-compose ps
 
 echo ""
-echo "🎉 Setup complete! Your Rails services are now running:"
-echo "   • MySQL: 127.0.0.1:33308 (root, no password)"
-echo "   • Redis: 127.0.0.1:6379"
-echo "   • Elasticsearch: http://127.0.0.1:9200"
+echo "🎉 Setup complete! Your development services are now running:"
+echo "   • MySQL: 127.0.0.1:${MYSQL_PORT:-33308} (root, no password)"
+echo "   • Redis: 127.0.0.1:${REDIS_PORT:-6379}"
+echo "   • Elasticsearch: http://127.0.0.1:${ELASTICSEARCH_PORT:-9200}"
 echo ""
 echo "To stop services: docker-compose down"
 echo "To view logs: docker-compose logs -f"
