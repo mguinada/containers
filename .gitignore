@@ -1,3 +1,17 @@
+# Environment files with sensitive data
+.env
+.env.prod
+.env.local
+.env.production
 
+# Docker volumes (if using local volumes)
+mysql_data/
+redis_data/
+elasticsearch_data/
+
+# Logs
+*.log
+
+# OS generated files
 .DS_Store
 .vincent/

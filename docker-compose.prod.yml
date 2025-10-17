@@ -1,0 +1,60 @@
+# Production Docker Compose Configuration
+# This file provides secure configurations for production environments
+# Copy this file and customize as needed for your production setup
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_rails_prod
+    ports:
+      - "${MYSQL_HOST:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-rails_production}
+      - MYSQL_USER=${MYSQL_USER:-rails}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data_prod:/var/lib/mysql
+    restart: always
+    command: --sql_mode="NO_ENGINE_SUBSTITUTION" --log_error_verbosity=2
+    networks:
+      - rails_network
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis_rails_prod
+    ports:
+      - "${REDIS_HOST:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_prod:/data
+    restart: always
+    networks:
+      - rails_network
+
+  elasticsearch:
+    image: blacktop/elasticsearch:7.16
+    container_name: elasticsearch_rails_prod
+    ports:
+      - "${ELASTICSEARCH_HOST:-127.0.0.1}:${ELASTICSEARCH_PORT:-9200}:9200"
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - action.destructive_requires_name=true
+      - logger.deprecation.level=warn
+    volumes:
+      - elasticsearch_data_prod:/usr/share/elasticsearch/data
+    restart: always
+    networks:
+      - rails_network
+
+volumes:
+  mysql_data_prod:
+  redis_data_prod:
+  elasticsearch_data_prod:
+
+networks:
+  rails_network:
+    driver: bridge

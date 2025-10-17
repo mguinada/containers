@@ -247,12 +247,44 @@ docker-compose logs --tail=100
 docker-compose logs -f --tail=50
 ```
 
+## Production Usage
+
+### Using the Production Configuration
+
+1. **Copy the production environment template:**
+   ```bash
+   cp production.env.example .env.prod
+   ```
+
+2. **Edit `.env.prod` with your production values:**
+   ```bash
+   # Set strong passwords and secure values
+   MYSQL_ROOT_PASSWORD=your_secure_root_password
+   MYSQL_PASSWORD=your_secure_mysql_password
+   REDIS_PASSWORD=your_secure_redis_password
+   ELASTIC_PASSWORD=your_secure_elastic_password
+   ```
+
+3. **Start production services:**
+   ```bash
+   docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+   ```
+
+### Production Security Features
+
+- **Password Protection**: All services require authentication
+- **Network Isolation**: Services run on isolated Docker network
+- **Secret Management**: Environment variables for sensitive data
+- **Production Defaults**: Secure configurations out of the box
+
 ## File Structure
 
 ```
 dockers/
-├── docker-compose.yml    # Main configuration file
-└── README.md            # This file
+├── docker-compose.yml           # Development configuration
+├── docker-compose.prod.yml      # Production configuration
+├── production.env.example       # Production environment template
+└── README.md                   # This file
 ```
 
 ## ⚠️ Security Notice
@@ -264,6 +296,21 @@ dockers/
 - **No External Access**: Services cannot be accessed from external networks or other machines
 - **Local Development Only**: Perfect for local development environments
 - **No Authentication Required**: Services use passwordless authentication for development convenience
+
+### ⚠️ Security Warnings
+- **DO NOT use in production environments**
+- **MySQL has no password** - development only
+- **Elasticsearch security is disabled** - development only
+- **Redis has no password** - development only
+- **These configurations are intentionally insecure for development convenience**
+
+### Production Security
+For production environments, use the provided `docker-compose.prod.yml` which includes:
+- Password-protected MySQL with separate user accounts
+- Password-protected Redis
+- Enabled Elasticsearch security with authentication
+- Network isolation
+- Proper secret management
 
 ### Network Security Verification
 
