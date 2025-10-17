@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Docker Compose Setup Script for Rails Dependencies
+# This script sets up the environment and starts the services
+
+echo "🚀 Setting up Docker Compose for Rails Dependencies..."
+
+# Check if .env file exists
+if [ ! -f .env ]; then
+    echo "📋 Creating .env file from template..."
+    cp env.example .env
+    echo "✅ .env file created successfully"
+else
+    echo "✅ .env file already exists"
+fi
+
+# Start the services
+echo "🐳 Starting Docker services..."
+docker-compose up -d
+
+# Check if services are running
+echo "🔍 Checking service status..."
+docker-compose ps
+
+echo ""
+echo "🎉 Setup complete! Your Rails services are now running:"
+echo "   • MySQL: 127.0.0.1:33308 (root, no password)"
+echo "   • Redis: 127.0.0.1:6379"
+echo "   • Elasticsearch: http://127.0.0.1:9200"
+echo ""
+echo "To stop services: docker-compose down"
+echo "To view logs: docker-compose logs -f"

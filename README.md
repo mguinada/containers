@@ -35,8 +35,18 @@ This repository contains a Docker Compose configuration for running MySQL, Redis
 
 ## Quick Start
 
-### Start Services
+### Option 1: Automated Setup (Recommended)
 ```bash
+# Run the setup script
+./bin/setup
+```
+
+### Option 2: Manual Setup
+```bash
+# 1. Copy the environment template
+cp env.example .env
+
+# 2. Start services
 docker-compose up -d
 ```
 
@@ -167,50 +177,66 @@ curl http://127.0.0.1:9200
 
 ### Environment Variables
 
-The Docker Compose configuration uses environment variables for flexible port and host configuration. All services support custom host and port settings with sensible defaults.
+The Docker Compose configuration uses environment variables for flexible port and host configuration. The easiest way to manage these is with a `.env` file.
+
+#### Quick Setup
+1. **Copy the environment template:**
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Start services:**
+   ```bash
+   docker-compose up -d
+   ```
 
 #### Default Configuration
-If no environment variables are set, services use these defaults:
+The `env.example` file contains these defaults:
 - **MySQL**: `127.0.0.1:33308`
 - **Redis**: `127.0.0.1:6379`
 - **Elasticsearch**: `127.0.0.1:9200`
 
 #### Custom Configuration
-Override any service configuration by setting environment variables:
+Edit the `.env` file to customize any settings:
 
 ```bash
-# Set custom ports and hosts
-export MYSQL_HOST=127.0.0.1
-export MYSQL_PORT=33308
-export REDIS_HOST=127.0.0.1
-export REDIS_PORT=6379
-export ELASTICSEARCH_HOST=127.0.0.1
-export ELASTICSEARCH_PORT=9200
-
-# Start services with custom configuration
-docker-compose up -d
+# .env
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=33308
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+ELASTICSEARCH_HOST=127.0.0.1
+ELASTICSEARCH_PORT=9200
 ```
 
 #### How It Works
-The `docker-compose.yml` uses the `${VAR:-default}` syntax:
+- Docker Compose automatically reads the `.env` file
+- The `docker-compose.yml` uses the `${VAR:-default}` syntax
 - `${MYSQL_HOST:-127.0.0.1}` means "use MYSQL_HOST if set, otherwise use 127.0.0.1"
-- This allows for flexible configuration while maintaining sensible defaults
-- Services will always start even without environment variables set
+- Services will always start with sensible defaults
 
 #### Examples
 ```bash
-# Use different ports
-export MYSQL_PORT=33309
-export REDIS_PORT=6380
-export ELASTICSEARCH_PORT=9201
-docker-compose up -d
+# Use different ports - edit .env file
+MYSQL_PORT=33309
+REDIS_PORT=6380
+ELASTICSEARCH_PORT=9201
 
 # Use different host (for external access - not recommended for security)
-export MYSQL_HOST=0.0.0.0
-export REDIS_HOST=0.0.0.0
-export ELASTICSEARCH_HOST=0.0.0.0
-docker-compose up -d
+MYSQL_HOST=0.0.0.0
+REDIS_HOST=0.0.0.0
+ELASTICSEARCH_HOST=0.0.0.0
 ```
+
+#### Benefits of .env File
+- **Project-specific**: Variables tied to the project, not your shell
+- **Persistent**: Survives shell restarts and new terminal sessions
+- **Team-friendly**: Other developers can use the same configuration
+- **Clean workflow**: Just run `docker-compose up -d`
+
+#### Scripts
+The `bin/` directory contains helpful scripts:
+- **`bin/setup`**: Automated setup script that creates `.env` file and starts services
 
 ## Auto-Start on Boot
 
@@ -251,8 +277,12 @@ docker-compose logs -f --tail=50
 
 ```
 dockers/
+├── bin/
+│   └── setup            # Automated setup script
 ├── docker-compose.yml    # Main configuration file
-└── README.md            # This file
+├── env.example          # Environment variables template
+├── .gitignore          # Git ignore file
+└── README.md           # This file
 ```
 
 ## ⚠️ Security Notice
